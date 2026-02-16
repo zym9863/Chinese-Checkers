@@ -25,6 +25,9 @@
   let pendingTo = $state<HexPos | null>(null);
   let pendingIsAI = $state(false);
 
+  // Guard to prevent duplicate AI trigger scheduling
+  let aiTriggerScheduled = false;
+
   const ANIM_DURATION = 200; // ms
 
   function render(excludePos?: HexPos | null) {
@@ -62,7 +65,6 @@
   function completeAnimation() {
     const from = pendingFrom;
     const to = pendingTo;
-    const isAI = pendingIsAI;
 
     // Clear animation state
     animating = false;
@@ -74,9 +76,7 @@
     if (from && to) {
       gameState.makeMove(from, to);
       selectedPiece.set({ pos: null, validMoves: [] });
-
-      // After any move completes, check if next player is AI
-      setTimeout(() => triggerAIMove(aiAnimateCallback), 100);
+      // AI trigger is handled by the $effect watching gameState
     }
   }
 
@@ -169,6 +169,21 @@
   });
   $effect(() => {
     if (ctx && $selectedPiece && !animating) render();
+  });
+
+  // Auto-trigger AI move when it's an AI player's turn
+  $effect(() => {
+    const state = $gameState;
+    if (state.phase === 'playing' && !animating && ctx) {
+      const currentPlayer = state.players[state.currentPlayerIndex];
+      if (currentPlayer.isAI && !aiTriggerScheduled) {
+        aiTriggerScheduled = true;
+        setTimeout(() => {
+          aiTriggerScheduled = false;
+          triggerAIMove(aiAnimateCallback);
+        }, 300);
+      }
+    }
   });
 </script>
 

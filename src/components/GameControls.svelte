@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { gameState, gameConfig } from '../lib/stores';
+  import { gameState, gameConfig, selectedPiece } from '../lib/stores';
 
   function handleUndo() {
+    selectedPiece.set({ pos: null, validMoves: [] });
     gameState.undoMove();
   }
 
   function handleRestart() {
+    selectedPiece.set({ pos: null, validMoves: [] });
     const config = $gameConfig;
     if (config.players.length > 0) {
       gameState.startGame(config);
@@ -13,6 +15,7 @@
   }
 
   function handleBackToMenu() {
+    selectedPiece.set({ pos: null, validMoves: [] });
     gameState.resetToMenu();
   }
 </script>

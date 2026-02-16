@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { gameState, gameConfig } from '../lib/stores';
+  import { gameState, gameConfig, selectedPiece } from '../lib/stores';
 
   const COLOR_CSS: Record<string, string> = {
     red: '#e74c3c',
@@ -24,6 +24,7 @@
   let winnerCss = $derived(winnerColor ? COLOR_CSS[winnerColor] : '#fff');
 
   function handlePlayAgain() {
+    selectedPiece.set({ pos: null, validMoves: [] });
     const config = $gameConfig;
     if (config.players.length > 0) {
       gameState.startGame(config);
@@ -31,6 +32,7 @@
   }
 
   function handleBackToMenu() {
+    selectedPiece.set({ pos: null, validMoves: [] });
     gameState.resetToMenu();
   }
 </script>
