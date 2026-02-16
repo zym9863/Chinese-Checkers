@@ -118,8 +118,16 @@ export const selectedPiece = writable<{
   validMoves: [],
 });
 
-/** Trigger AI move if the current player is an AI */
-export function triggerAIMove() {
+/**
+ * Trigger AI move if the current player is an AI.
+ * @param animateCallback - Optional callback to animate the move.
+ *   If provided, the callback receives (from, to) and is responsible for
+ *   executing the move (via makeAnimatedMove). If not provided, the move
+ *   is executed directly.
+ */
+export function triggerAIMove(
+  animateCallback?: (from: HexPos, to: HexPos) => void,
+) {
   const state = get(gameState);
   if (state.phase !== 'playing') return;
   const currentPlayer = state.players[state.currentPlayerIndex];
@@ -133,9 +141,13 @@ export function triggerAIMove() {
   const move = findBestMove(state.board, currentPlayer, 2, opponent);
   if (move) {
     setTimeout(() => {
-      gameState.makeMove(move.from, move.to);
-      // Check if next player is also AI
-      triggerAIMove();
-    }, 500); // Small delay for visual feedback
+      if (animateCallback) {
+        animateCallback(move.from, move.to);
+      } else {
+        gameState.makeMove(move.from, move.to);
+        // Check if next player is also AI
+        triggerAIMove(animateCallback);
+      }
+    }, 300); // Small delay for visual feedback
   }
 }

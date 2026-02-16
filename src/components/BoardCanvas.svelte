@@ -1,23 +1,133 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { gameState, selectedPiece } from '../lib/stores';
-  import { drawBoard, pixelToHex } from '../lib/renderer';
+  import { gameState, selectedPiece, triggerAIMove } from '../lib/stores';
+  import { drawBoard, drawPieceAt, hexToPixel, pixelToHex } from '../lib/renderer';
   import { getValidMoves } from '../lib/rules';
   import { posKey } from '../lib/board';
-  import type { HexPos } from '../lib/types';
+  import type { HexPos, PlayerColor } from '../lib/types';
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
   const WIDTH = 700;
   const HEIGHT = 700;
 
-  function render() {
+  // ── Animation state (Svelte 5 runes) ──────────────────────────────────
+  let animating = $state(false);
+  let animFromPixel = $state({ x: 0, y: 0 });
+  let animToPixel = $state({ x: 0, y: 0 });
+  let animColor = $state<PlayerColor>('red');
+  let animFromPos = $state<HexPos | null>(null);
+  let animProgress = $state(0);
+  let animStartTime = $state(0);
+
+  // Pending move to execute after animation completes
+  let pendingFrom = $state<HexPos | null>(null);
+  let pendingTo = $state<HexPos | null>(null);
+  let pendingIsAI = $state(false);
+
+  const ANIM_DURATION = 200; // ms
+
+  function render(excludePos?: HexPos | null) {
     if (!ctx) return;
-    drawBoard(ctx, WIDTH, HEIGHT, $gameState.board, $selectedPiece.pos, $selectedPiece.validMoves);
+    drawBoard(ctx, WIDTH, HEIGHT, $gameState.board, $selectedPiece.pos, $selectedPiece.validMoves, excludePos);
+  }
+
+  function animationFrame(timestamp: number) {
+    if (!animating) return;
+
+    const elapsed = timestamp - animStartTime;
+    animProgress = Math.min(elapsed / ANIM_DURATION, 1);
+
+    // Ease-out cubic for smooth deceleration
+    const t = 1 - Math.pow(1 - animProgress, 3);
+
+    // Interpolate pixel position
+    const currentX = animFromPixel.x + (animToPixel.x - animFromPixel.x) * t;
+    const currentY = animFromPixel.y + (animToPixel.y - animFromPixel.y) * t;
+
+    // Render board without the moving piece at its source
+    render(animFromPos);
+
+    // Draw the piece at the interpolated position
+    drawPieceAt(ctx, currentX, currentY, animColor);
+
+    if (animProgress < 1) {
+      requestAnimationFrame(animationFrame);
+    } else {
+      // Animation complete: execute the actual move
+      completeAnimation();
+    }
+  }
+
+  function completeAnimation() {
+    const from = pendingFrom;
+    const to = pendingTo;
+    const isAI = pendingIsAI;
+
+    // Clear animation state
+    animating = false;
+    animFromPos = null;
+    pendingFrom = null;
+    pendingTo = null;
+    pendingIsAI = false;
+
+    if (from && to) {
+      gameState.makeMove(from, to);
+      selectedPiece.set({ pos: null, validMoves: [] });
+
+      // After any move completes, check if next player is AI
+      setTimeout(() => triggerAIMove(aiAnimateCallback), 100);
+    }
+  }
+
+  /** Callback passed to triggerAIMove to animate AI moves */
+  function aiAnimateCallback(from: HexPos, to: HexPos) {
+    makeAnimatedMove(from, to, true);
+  }
+
+  /**
+   * Start an animated move from one position to another.
+   * Can be called for both human and AI moves.
+   */
+  export function makeAnimatedMove(from: HexPos, to: HexPos, isAI: boolean = false) {
+    if (animating) return; // Ignore if already animating
+
+    const centerX = WIDTH / 2;
+    const centerY = HEIGHT / 2;
+
+    // Get the piece color from the board before moving
+    const fromCell = $gameState.board.get(posKey(from));
+    if (!fromCell || !fromCell.piece) return;
+
+    // Save pixel positions and piece color
+    animFromPixel = hexToPixel(from, centerX, centerY);
+    animToPixel = hexToPixel(to, centerX, centerY);
+    animColor = fromCell.piece;
+    animFromPos = from;
+
+    // Save the pending move
+    pendingFrom = from;
+    pendingTo = to;
+    pendingIsAI = isAI;
+
+    // Clear selection immediately for visual feedback
+    selectedPiece.set({ pos: null, validMoves: [] });
+
+    // Start animation
+    animating = true;
+    animProgress = 0;
+    animStartTime = performance.now();
+    requestAnimationFrame(animationFrame);
   }
 
   function handleClick(e: MouseEvent) {
     if ($gameState.phase !== 'playing') return;
+    if (animating) return; // Block clicks during animation
+
+    // Block clicks if current player is AI
+    const currentPlayer = $gameState.players[$gameState.currentPlayerIndex];
+    if (currentPlayer.isAI) return;
+
     const rect = canvas.getBoundingClientRect();
     const scaleX = WIDTH / rect.width;
     const scaleY = HEIGHT / rect.height;
@@ -32,11 +142,10 @@
 
     const sel = $selectedPiece;
     const clickedCell = $gameState.board.get(posKey(clickedPos));
-    const currentPlayer = $gameState.players[$gameState.currentPlayerIndex];
 
     if (sel.pos && sel.validMoves.some(m => posKey(m) === posKey(clickedPos))) {
-      gameState.makeMove(sel.pos, clickedPos);
-      selectedPiece.set({ pos: null, validMoves: [] });
+      // Valid move selected: start animated move
+      makeAnimatedMove(sel.pos, clickedPos, false);
       return;
     }
 
@@ -56,10 +165,10 @@
 
   // Use $effect for Svelte 5 reactivity
   $effect(() => {
-    if (ctx && $gameState) render();
+    if (ctx && $gameState && !animating) render();
   });
   $effect(() => {
-    if (ctx && $selectedPiece) render();
+    if (ctx && $selectedPiece && !animating) render();
   });
 </script>
 
@@ -69,4 +178,4 @@
   height={HEIGHT}
   onclick={handleClick}
   style="max-width: 100%; cursor: pointer; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);"
-/>
+></canvas>

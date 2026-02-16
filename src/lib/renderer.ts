@@ -136,6 +136,14 @@ function drawValidMoveIndicator(ctx: CanvasRenderingContext2D, x: number, y: num
   ctx.fill();
 }
 
+/**
+ * Draw a piece at arbitrary pixel coordinates.
+ * Exported so it can be used for animation overlays.
+ */
+export function drawPieceAt(ctx: CanvasRenderingContext2D, x: number, y: number, color: PlayerColor): void {
+  drawPiece(ctx, x, y, color);
+}
+
 function drawPiece(ctx: CanvasRenderingContext2D, x: number, y: number, color: PlayerColor): void {
   const palette = COLOR_PALETTE[color];
 
@@ -208,6 +216,8 @@ function drawSelectedHighlight(ctx: CanvasRenderingContext2D, x: number, y: numb
  * 3. Valid move indicators
  * 4. All pieces with glass/marble effect
  * 5. Selected piece highlight ring
+ *
+ * @param excludePos - Optional position to exclude from piece rendering (used during animation)
  */
 export function drawBoard(
   ctx: CanvasRenderingContext2D,
@@ -216,6 +226,7 @@ export function drawBoard(
   board: Map<string, Cell>,
   selectedPos: HexPos | null,
   validMoves: HexPos[],
+  excludePos?: HexPos | null,
 ): void {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -223,6 +234,7 @@ export function drawBoard(
   // Build lookup sets for quick checks
   const validMoveKeys = new Set(validMoves.map(m => posKey(m)));
   const selectedKey = selectedPos ? posKey(selectedPos) : null;
+  const excludeKey = excludePos ? posKey(excludePos) : null;
 
   // 1. Wood texture background
   drawWoodBackground(ctx, width, height);
@@ -239,9 +251,11 @@ export function drawBoard(
     drawValidMoveIndicator(ctx, x, y);
   }
 
-  // 4. Draw all pieces
+  // 4. Draw all pieces (skip excluded position during animation)
   for (const cell of board.values()) {
     if (cell.piece) {
+      const key = posKey(cell.pos);
+      if (excludeKey && key === excludeKey) continue;
       const { x, y } = hexToPixel(cell.pos, centerX, centerY);
       drawPiece(ctx, x, y, cell.piece);
     }
