@@ -15,6 +15,10 @@ export function addPos(a: HexPos, b: HexPos): HexPos {
   return { q: a.q + b.q, r: a.r + b.r, s: a.s + b.s };
 }
 
+function scalePos(pos: HexPos, k: number): HexPos {
+  return { q: pos.q * k, r: pos.r * k, s: pos.s * k };
+}
+
 export function isAdjacent(a: HexPos, b: HexPos): boolean {
   const dq = Math.abs(a.q - b.q);
   const dr = Math.abs(a.r - b.r);
@@ -29,19 +33,42 @@ export function getAdjacentPositions(pos: HexPos, board: Map<string, Cell>): Hex
     .filter(p => board.has(posKey(p)));
 }
 
-/** Get all single-jump landing positions from a given origin */
+/** Get all single-jump landing positions from a given origin (short + equal-distance long jumps). */
 export function getJumpTargets(pos: HexPos, board: Map<string, Cell>): HexPos[] {
   const jumps: HexPos[] = [];
+  const seen = new Set<string>();
+
   for (const dir of HEX_DIRECTIONS) {
-    const mid = addPos(pos, dir);
-    const midCell = board.get(posKey(mid));
-    if (!midCell || !midCell.piece) continue; // must jump over a piece
+    // Distance k=1 is the classic short jump; k>1 are equal-distance long jumps.
+    for (let k = 1; ; k++) {
+      const mid = addPos(pos, scalePos(dir, k));
+      const land = addPos(pos, scalePos(dir, 2 * k));
 
-    const land = addPos(mid, dir);
-    const landCell = board.get(posKey(land));
-    if (!landCell || landCell.piece) continue; // landing must be empty and on board
+      const midCell = board.get(posKey(mid));
+      const landCell = board.get(posKey(land));
+      if (!midCell || !landCell) break; // past board edge in this direction
+      if (!midCell.piece || landCell.piece) continue;
 
-    jumps.push(land);
+      // Between start and landing there must be exactly one piece: the midpoint piece.
+      let clearPath = true;
+      for (let t = 1; t < 2 * k; t++) {
+        if (t === k) continue;
+        const between = addPos(pos, scalePos(dir, t));
+        const betweenCell = board.get(posKey(between));
+        if (!betweenCell || betweenCell.piece) {
+          clearPath = false;
+          break;
+        }
+      }
+
+      if (!clearPath) continue;
+
+      const key = posKey(land);
+      if (!seen.has(key)) {
+        seen.add(key);
+        jumps.push(land);
+      }
+    }
   }
   return jumps;
 }

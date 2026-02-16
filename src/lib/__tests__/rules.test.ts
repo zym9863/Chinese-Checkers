@@ -45,6 +45,47 @@ describe('getJumpTargets', () => {
     const jumps = getJumpTargets(origin, board);
     expect(jumps.length).toBe(0);
   });
+
+  it('allows equal-distance long jumps when only one midpoint piece exists', () => {
+    const board = generateBoard();
+    const origin: HexPos = { q: 0, r: 0, s: 0 };
+    const midPos: HexPos = { q: 0, r: -2, s: 2 };
+    const landPos: HexPos = { q: 0, r: -4, s: 4 };
+
+    expect(board.has(posKey(midPos))).toBe(true);
+    expect(board.has(posKey(landPos))).toBe(true);
+
+    board.get(posKey(midPos))!.piece = 'blue';
+    const jumps = getJumpTargets(origin, board).map(p => posKey(p));
+    expect(jumps).toContain(posKey(landPos));
+  });
+
+  it('does not allow long jumps when there is an extra piece between origin and landing', () => {
+    const board = generateBoard();
+    const origin: HexPos = { q: 0, r: 0, s: 0 };
+    const extraPos: HexPos = { q: 0, r: -1, s: 1 };
+    const midPos: HexPos = { q: 0, r: -2, s: 2 };
+    const landPos: HexPos = { q: 0, r: -4, s: 4 };
+
+    board.get(posKey(extraPos))!.piece = 'red';
+    board.get(posKey(midPos))!.piece = 'blue';
+
+    const jumps = getJumpTargets(origin, board).map(p => posKey(p));
+    expect(jumps).not.toContain(posKey(landPos));
+  });
+
+  it('does not allow long jumps when landing cell is occupied', () => {
+    const board = generateBoard();
+    const origin: HexPos = { q: 0, r: 0, s: 0 };
+    const midPos: HexPos = { q: 0, r: -2, s: 2 };
+    const landPos: HexPos = { q: 0, r: -4, s: 4 };
+
+    board.get(posKey(midPos))!.piece = 'blue';
+    board.get(posKey(landPos))!.piece = 'green';
+
+    const jumps = getJumpTargets(origin, board).map(p => posKey(p));
+    expect(jumps).not.toContain(posKey(landPos));
+  });
 });
 
 describe('getValidMoves', () => {
@@ -68,5 +109,22 @@ describe('getValidMoves', () => {
     // Should be able to jump to (2,-2,0) and then chain-jump to (4,-4,0)
     expect(moveKeys).toContain('2,-2,0');
     expect(moveKeys).toContain('4,-4,0');
+  });
+
+  it('includes mixed short and long chain jumps', () => {
+    const board = generateBoard();
+    const origin: HexPos = { q: 0, r: 0, s: 0 };
+    board.get(posKey(origin))!.piece = 'red';
+
+    // Short jump: (0,0,0) -> (0,-2,2) over (0,-1,1)
+    board.get(posKey({ q: 0, r: -1, s: 1 }))!.piece = 'blue';
+
+    // Long jump from (0,-2,2) -> (0,-6,6) over midpoint (0,-4,4).
+    // Intermediate cells (0,-3,3) and (0,-5,5) remain empty.
+    board.get(posKey({ q: 0, r: -4, s: 4 }))!.piece = 'green';
+
+    const moveKeys = getValidMoves(origin, board).map(p => posKey(p));
+    expect(moveKeys).toContain('0,-2,2');
+    expect(moveKeys).toContain('0,-6,6');
   });
 });
