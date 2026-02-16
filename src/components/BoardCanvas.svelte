@@ -192,5 +192,15 @@
   width={WIDTH}
   height={HEIGHT}
   onclick={handleClick}
-  style="max-width: 100%; cursor: pointer; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);"
+  class="game-canvas"
 ></canvas>
+
+<style>
+  .game-canvas {
+    max-width: 100%;
+    height: auto;
+    cursor: pointer;
+    border-radius: var(--radius-lg);
+    display: block;
+  }
+</style>

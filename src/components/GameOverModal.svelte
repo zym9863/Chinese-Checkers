@@ -2,12 +2,12 @@
   import { gameState, gameConfig, selectedPiece } from '../lib/stores';
 
   const COLOR_CSS: Record<string, string> = {
-    red: '#e74c3c',
-    blue: '#2196f3',
-    green: '#4caf50',
-    yellow: '#ffc107',
-    purple: '#9c27b0',
-    orange: '#ff9800',
+    red: 'var(--color-red)',
+    blue: 'var(--color-blue)',
+    green: 'var(--color-green)',
+    yellow: 'var(--color-yellow)',
+    purple: 'var(--color-purple)',
+    orange: 'var(--color-orange)',
   };
 
   const COLOR_NAMES: Record<string, string> = {
@@ -21,7 +21,7 @@
 
   let winnerColor = $derived($gameState.winner);
   let winnerName = $derived(winnerColor ? COLOR_NAMES[winnerColor] : '');
-  let winnerCss = $derived(winnerColor ? COLOR_CSS[winnerColor] : '#fff');
+  let winnerCss = $derived(winnerColor ? COLOR_CSS[winnerColor] : 'var(--color-gold)');
 
   function handlePlayAgain() {
     selectedPiece.set({ pos: null, validMoves: [] });
@@ -38,20 +38,42 @@
 </script>
 
 {#if $gameState.phase === 'gameOver'}
-  <div class="modal-overlay">
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop"></div>
+    
+    <!-- Confetti decoration -->
+    <div class="confetti">
+      {#each Array(20) as _, i}
+        <div class="confetti-piece" style="animation-delay: {i * 0.1}s; --delay: {i * 0.1}s"></div>
+      {/each}
+    </div>
+    
     <div class="modal-card">
-      <h2 class="modal-title">游戏结束</h2>
-      <div class="winner-info">
-        <span class="winner-dot" style="background-color: {winnerCss}"></span>
+      <!-- Trophy icon -->
+      <div class="trophy-container">
+        <div class="trophy-glow"></div>
+        <div class="trophy">🏆</div>
+      </div>
+      
+      <h2 id="modal-title" class="modal-title">游戏结束</h2>
+      
+      <div class="winner-section">
+        <div class="winner-badge">
+          <div class="winner-dot" style="background: {winnerCss}"></div>
+          <div class="winner-glow" style="background: {winnerCss}"></div>
+        </div>
         <span class="winner-name" style="color: {winnerCss}">{winnerName}</span>
         <span class="winner-text">获胜!</span>
       </div>
+      
       <div class="modal-buttons">
-        <button class="modal-btn play-again-btn" onclick={handlePlayAgain}>
-          再来一局
+        <button class="modal-btn primary-btn" onclick={handlePlayAgain}>
+          <span class="btn-icon">⟳</span>
+          <span class="btn-text">再来一局</span>
         </button>
-        <button class="modal-btn menu-btn" onclick={handleBackToMenu}>
-          返回菜单
+        <button class="modal-btn secondary-btn" onclick={handleBackToMenu}>
+          <span class="btn-icon">◀</span>
+          <span class="btn-text">返回菜单</span>
         </button>
       </div>
     </div>
@@ -65,129 +87,338 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(4px);
+    z-index: var(--z-modal);
+    padding: var(--space-lg);
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 8, 15, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Confetti Animation */
+  .confetti {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -20px;
+    left: calc(50% + (var(--delay) * 30px - 100px));
+    background: var(--color-gold);
+    opacity: 0;
+    animation: confettiFall 3s ease-out forwards;
+    animation-delay: var(--delay);
+  }
+
+  .confetti-piece:nth-child(odd) {
+    background: var(--color-red);
+    border-radius: 50%;
+  }
+
+  .confetti-piece:nth-child(3n) {
+    background: var(--color-blue);
+    width: 8px;
+    height: 8px;
+  }
+
+  .confetti-piece:nth-child(4n) {
+    background: var(--color-green);
+  }
+
+  @keyframes confettiFall {
+    0% {
+      opacity: 1;
+      transform: translateY(0) rotate(0deg);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(100vh) rotate(720deg);
+    }
   }
 
   .modal-card {
-    background: linear-gradient(135deg, #d4a05a 0%, #c8903e 50%, #b5834a 100%);
-    border-radius: 20px;
-    padding: 2.5rem 3rem;
-    box-shadow:
-      0 16px 48px rgba(0, 0, 0, 0.6),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-    border: 2px solid #a87238;
+    position: relative;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      rgba(255, 255, 255, 0.01) 100%
+    );
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-xl);
+    padding: var(--space-3xl) var(--space-2xl);
+    min-width: 340px;
+    max-width: 420px;
+    width: 100%;
     text-align: center;
-    min-width: 300px;
-    animation: slideIn 0.3s ease-out;
+    box-shadow:
+      0 32px 80px rgba(0, 0, 0, 0.5),
+      0 0 1px rgba(255, 255, 255, 0.15) inset;
+    animation: modalSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  @keyframes slideIn {
+  .modal-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 160, 90, 0.5) 50%,
+      transparent 100%
+    );
+  }
+
+  @keyframes modalSlideIn {
     from {
-      transform: scale(0.9) translateY(-20px);
       opacity: 0;
+      transform: scale(0.9) translateY(30px);
     }
     to {
-      transform: scale(1) translateY(0);
       opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  /* Trophy */
+  .trophy-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-lg);
+  }
+
+  .trophy-glow {
+    position: absolute;
+    inset: -20px;
+    background: radial-gradient(circle, rgba(212, 160, 90, 0.3) 0%, transparent 70%);
+    animation: trophyGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes trophyGlow {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+  }
+
+  .trophy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    animation: trophyBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s backwards;
+  }
+
+  @keyframes trophyBounce {
+    from {
+      opacity: 0;
+      transform: scale(0) rotate(-20deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
     }
   }
 
   .modal-title {
-    font-size: 1.8rem;
-    color: #3a1f04;
-    margin: 0 0 1.5rem;
-    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.2);
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-xl);
     letter-spacing: 0.1em;
+    animation: fadeInUp 0.5s ease 0.4s backwards;
   }
 
-  .winner-info {
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Winner Section */
+  .winner-section {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
-    margin-bottom: 2rem;
+    gap: var(--space-md);
+    margin-bottom: var(--space-2xl);
+    animation: fadeInUp 0.5s ease 0.5s backwards;
+  }
+
+  .winner-badge {
+    position: relative;
+    width: 36px;
+    height: 36px;
   }
 
   .winner-dot {
-    width: 28px;
-    height: 28px;
+    position: absolute;
+    inset: 4px;
     border-radius: 50%;
     box-shadow:
-      0 3px 8px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.3),
       inset 0 -3px 6px rgba(0, 0, 0, 0.2),
       inset 0 3px 6px rgba(255, 255, 255, 0.3);
+    z-index: 1;
+  }
+
+  .winner-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    filter: blur(8px);
+    opacity: 0.6;
+    animation: winnerPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes winnerPulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.3); opacity: 0.3; }
   }
 
   .winner-name {
+    font-family: var(--font-display);
     font-size: 1.5rem;
-    font-weight: 700;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    font-weight: var(--font-weight-bold);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   .winner-text {
-    font-size: 1.5rem;
-    color: #3a1f04;
-    font-weight: 600;
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
   }
 
+  /* Buttons */
   .modal-buttons {
     display: flex;
-    gap: 1rem;
+    gap: var(--space-md);
     justify-content: center;
+    animation: fadeInUp 0.5s ease 0.6s backwards;
   }
 
   .modal-btn {
-    border-radius: 12px;
-    padding: 0.7rem 1.8rem;
-    font-size: 1rem;
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-icon {
+    font-size: 1rem;
+  }
+
+  .btn-text {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: var(--font-weight-semibold);
     letter-spacing: 0.05em;
   }
 
-  .play-again-btn {
-    background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
-    color: #fff;
-    border: 2px solid #ff6b5a;
-    box-shadow:
-      0 4px 12px rgba(231, 76, 60, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  /* Primary Button */
+  .primary-btn {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-amber) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(212, 160, 90, 0.3);
   }
 
-  .play-again-btn:hover {
-    background: linear-gradient(180deg, #ff6b5a 0%, #e74c3c 100%);
+  .primary-btn .btn-icon,
+  .primary-btn .btn-text {
+    color: white;
+  }
+
+  .primary-btn:hover {
     transform: translateY(-2px);
-    box-shadow:
-      0 6px 16px rgba(231, 76, 60, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 24px rgba(212, 160, 90, 0.4);
   }
 
-  .menu-btn {
-    background: linear-gradient(180deg, #7a5535 0%, #5a3d20 100%);
-    color: #e8d5b8;
-    border: 2px solid #4a2d12;
-    box-shadow:
-      0 3px 10px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  .primary-btn:active {
+    transform: translateY(0);
   }
 
-  .menu-btn:hover {
-    background: linear-gradient(180deg, #8a6545 0%, #6a4d30 100%);
+  /* Secondary Button */
+  .secondary-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .secondary-btn .btn-icon {
+    color: var(--color-text-muted);
+  }
+
+  .secondary-btn .btn-text {
+    color: var(--color-text-secondary);
+  }
+
+  .secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
-    border-color: #d4a05a;
-    box-shadow:
-      0 5px 14px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
-  .modal-btn:active {
-    transform: translateY(0px);
+  .secondary-btn:hover .btn-icon,
+  .secondary-btn:hover .btn-text {
+    color: var(--color-text-primary);
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .modal-card {
+      padding: var(--space-xl) var(--space-lg);
+      min-width: auto;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+    }
+
+    .winner-section {
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .modal-buttons {
+      flex-direction: column;
+    }
+
+    .modal-btn {
+      justify-content: center;
+    }
   }
 </style>

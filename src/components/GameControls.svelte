@@ -21,65 +21,139 @@
 </script>
 
 <div class="controls-panel">
-  <button class="control-btn" onclick={handleUndo}>
-    悔棋
+  <button class="control-btn undo-btn" onclick={handleUndo}>
+    <span class="btn-icon">↩</span>
+    <span class="btn-text">悔棋</span>
   </button>
-  <button class="control-btn" onclick={handleRestart}>
-    重新开始
+  
+  <button class="control-btn restart-btn" onclick={handleRestart}>
+    <span class="btn-icon">⟳</span>
+    <span class="btn-text">重新开始</span>
   </button>
+  
   <button class="control-btn back-btn" onclick={handleBackToMenu}>
-    返回菜单
+    <span class="btn-icon">◀</span>
+    <span class="btn-text">返回菜单</span>
   </button>
 </div>
 
 <style>
   .controls-panel {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--space-md);
     justify-content: center;
     flex-wrap: wrap;
-    padding: 0.75rem 0;
+    padding: var(--space-md) 0;
   }
 
   .control-btn {
-    background: linear-gradient(180deg, #7a5535 0%, #5a3d20 100%);
-    color: #e8d5b8;
-    border: 2px solid #4a2d12;
-    border-radius: 12px;
-    padding: 0.6rem 1.4rem;
-    font-size: 0.95rem;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-lg);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow:
-      0 3px 10px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    letter-spacing: 0.05em;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .control-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      transparent 50%
+    );
+    opacity: 0;
+    transition: opacity var(--transition-base);
   }
 
   .control-btn:hover {
-    background: linear-gradient(180deg, #8a6545 0%, #6a4d30 100%);
-    transform: translateY(-1px);
-    border-color: #d4a05a;
-    box-shadow:
-      0 5px 14px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .control-btn:hover::before {
+    opacity: 1;
   }
 
   .control-btn:active {
-    transform: translateY(1px);
-    box-shadow:
-      0 1px 4px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
+  .btn-icon {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    transition: color var(--transition-base);
+  }
+
+  .btn-text {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    letter-spacing: 0.05em;
+    transition: color var(--transition-base);
+  }
+
+  .control-btn:hover .btn-icon,
+  .control-btn:hover .btn-text {
+    color: var(--color-text-primary);
+  }
+
+  /* Undo Button - Special styling */
+  .undo-btn:hover {
+    border-color: rgba(52, 152, 219, 0.4);
+  }
+
+  .undo-btn:hover .btn-icon {
+    color: var(--color-blue-light);
+  }
+
+  /* Restart Button - Special styling */
+  .restart-btn:hover {
+    border-color: rgba(39, 174, 96, 0.4);
+  }
+
+  .restart-btn:hover .btn-icon {
+    color: var(--color-green-light);
+  }
+
+  /* Back Button - Special styling */
   .back-btn {
-    background: linear-gradient(180deg, #6b3a3a 0%, #4a2020 100%);
-    border-color: #5a2828;
+    background: rgba(231, 76, 60, 0.08);
+    border-color: rgba(231, 76, 60, 0.2);
   }
 
   .back-btn:hover {
-    background: linear-gradient(180deg, #7b4a4a 0%, #5a3030 100%);
-    border-color: #c0392b;
+    background: rgba(231, 76, 60, 0.15);
+    border-color: rgba(231, 76, 60, 0.4);
+  }
+
+  .back-btn:hover .btn-icon {
+    color: var(--color-red-light);
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .controls-panel {
+      gap: var(--space-sm);
+    }
+
+    .control-btn {
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .btn-text {
+      font-size: 0.85rem;
+    }
   }
 </style>
