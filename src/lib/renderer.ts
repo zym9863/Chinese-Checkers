@@ -15,9 +15,9 @@ interface ColorSet {
 }
 
 const COLOR_PALETTE: Record<PlayerColor, ColorSet> = {
-  red:    { main: '#e74c3c', light: '#ff6b5a', dark: '#c0392b', glow: 'rgba(231, 76, 60, 0.5)' },
-  blue:   { main: '#3498db', light: '#5dade2', dark: '#2980b9', glow: 'rgba(52, 152, 219, 0.5)' },
-  green:  { main: '#27ae60', light: '#58d68d', dark: '#1e8449', glow: 'rgba(39, 174, 96, 0.5)' },
+  red: { main: '#e74c3c', light: '#ff6b5a', dark: '#c0392b', glow: 'rgba(231, 76, 60, 0.5)' },
+  blue: { main: '#3498db', light: '#5dade2', dark: '#2980b9', glow: 'rgba(52, 152, 219, 0.5)' },
+  green: { main: '#27ae60', light: '#58d68d', dark: '#1e8449', glow: 'rgba(39, 174, 96, 0.5)' },
   yellow: { main: '#f1c40f', light: '#f4d03f', dark: '#d4ac0d', glow: 'rgba(241, 196, 15, 0.5)' },
   purple: { main: '#9b59b6', light: '#bb8fce', dark: '#8e44ad', glow: 'rgba(155, 89, 182, 0.5)' },
   orange: { main: '#e67e22', light: '#f39c12', dark: '#d35400', glow: 'rgba(230, 126, 34, 0.5)' },
@@ -27,11 +27,12 @@ const COLOR_PALETTE: Record<PlayerColor, ColorSet> = {
 
 /**
  * Convert hex cube coordinate to pixel position on canvas.
- * Uses flat-top hex layout.
+ * Uses pointy-top hex layout so that rows (same r) are horizontal,
+ * making the star's triangular corners appear as equilateral triangles.
  */
 export function hexToPixel(pos: HexPos, centerX: number, centerY: number): { x: number; y: number } {
-  const x = centerX + HEX_SIZE * (3 / 2 * pos.q);
-  const y = centerY + HEX_SIZE * (Math.sqrt(3) / 2 * pos.q + Math.sqrt(3) * pos.r);
+  const x = centerX + HEX_SIZE * (Math.sqrt(3) * pos.q + Math.sqrt(3) / 2 * pos.r);
+  const y = centerY + HEX_SIZE * (3 / 2 * pos.r);
   return { x, y };
 }
 
@@ -91,7 +92,7 @@ function drawBoardBackground(ctx: CanvasRenderingContext2D, width: number, heigh
   ctx.globalAlpha = 0.02;
   ctx.strokeStyle = '#d4a05a';
   ctx.lineWidth = 0.5;
-  
+
   const gridSize = 40;
   for (let x = 0; x < width; x += gridSize) {
     ctx.beginPath();

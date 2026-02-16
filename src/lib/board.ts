@@ -57,19 +57,21 @@ function rotateN(pos: HexPos, n: number): HexPos {
 /**
  * Generate the base triangle cells for corner 0 (top).
  *
- * The triangle extends upward (in the -r, +s direction) from the hex boundary.
+ * The triangle extends upward (in the -r direction) from the hex boundary.
  * At depth d (1..4) from the hex edge, there are (5-d) cells.
  * Row pattern:
  *   d=1: 4 cells, d=2: 3 cells, d=3: 2 cells, d=4: 1 cell
  *   Total = 4+3+2+1 = 10
  *
- * Cell at depth d, width w: (w, -(4+d), 4+d-w) for w = 0..(4-d)
+ * Cells are centered above the top edge of the hexagon so that the
+ * triangle looks like an equilateral triangle in pointy-top hex layout.
+ * Cell at depth d, width w: (d+w, -(4+d), 4-w)  for w = 0..(4-d)
  */
 function generateCorner0Cells(): HexPos[] {
   const cells: HexPos[] = [];
   for (let d = 1; d <= BOARD_SIZE; d++) {
     for (let w = 0; w <= BOARD_SIZE - d; w++) {
-      cells.push({ q: w, r: -(BOARD_SIZE + d), s: BOARD_SIZE + d - w });
+      cells.push({ q: d + w, r: -(BOARD_SIZE + d), s: BOARD_SIZE - w });
     }
   }
   return cells;
