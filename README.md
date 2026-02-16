@@ -1,47 +1,153 @@
-# Svelte + TS + Vite
+[English](README.md) | [中文](README-zh.md)
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+# Chinese Checkers (跳棋)
 
-## Recommended IDE Setup
+A browser-based Chinese Checkers game built with Vite + Svelte + TypeScript, featuring a skeuomorphic visual style with wooden board and glass marble pieces.
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+## Features
 
-## Need an official Svelte framework?
+- 🎮 **Multiple Game Modes**: Local multiplayer and AI opponent
+- 👥 **2-6 Players**: Full hexagonal star board with 121 positions
+- 🎨 **Skeuomorphic Design**: Wood texture board with glass/marble pieces
+- 🤖 **AI Engine**: Minimax algorithm with Alpha-Beta pruning
+- ⏪ **Undo Support**: Take back moves during gameplay
+- 📱 **Responsive**: Works on desktop and tablet screens
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+## Tech Stack
 
-## Technical considerations
+- **Framework**: [Svelte 5](https://svelte.dev/) with TypeScript
+- **Build Tool**: [Vite 8](https://vitejs.dev/)
+- **Rendering**: HTML5 Canvas
+- **Testing**: [Vitest](https://vitest.dev/)
+- **Package Manager**: [pnpm](https://pnpm.io/)
 
-**Why use this over SvelteKit?**
+## Getting Started
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+### Prerequisites
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+- Node.js 18+
+- pnpm (recommended) or npm
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+### Installation
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+```bash
+# Clone the repository
+git clone https://github.com/zym9863/chinese-checkers.git
+cd chinese-checkers
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+# Install dependencies
+pnpm install
 
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+# Start development server
+pnpm dev
 ```
+
+### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
+| `pnpm preview` | Preview production build |
+| `pnpm check` | Type check with svelte-check |
+| `pnpm test` | Run tests |
+| `pnpm test:watch` | Run tests in watch mode |
+
+## Game Rules
+
+Chinese Checkers is a strategy board game where the objective is to move all your pieces from your starting triangle to the opposite triangle.
+
+### Movement
+
+1. **Adjacent Move**: Move to an adjacent empty cell (6 directions)
+2. **Chain Jump**: Jump over adjacent pieces to empty cells, can chain multiple jumps in one turn
+
+### Winning
+
+The first player to move all 10 pieces to the opposite triangle wins.
+
+### Player Configurations
+
+| Players | Starting Positions |
+|---------|-------------------|
+| 2 | Opposite corners (top/bottom) |
+| 3 | Alternating corners |
+| 4 | Two pairs of opposite corners |
+| 6 | All corners |
+
+## Architecture
+
+### Component Structure
+
+```
+src/
+├── App.svelte              # Main app container
+├── components/
+│   ├── MenuScreen.svelte   # Start screen (player count, mode selection)
+│   ├── GameScreen.svelte   # Main game interface
+│   ├── BoardCanvas.svelte  # Canvas board rendering
+│   ├── PlayerInfo.svelte   # Player info sidebar
+│   ├── GameControls.svelte # Undo/restart controls
+│   └── GameOverModal.svelte# Game over dialog
+└── lib/
+    ├── board.ts            # Board generation and utilities
+    ├── rules.ts            # Game rules and move validation
+    ├── ai.ts               # AI engine (Minimax + Alpha-Beta)
+    ├── renderer.ts         # Canvas rendering logic
+    ├── stores.ts           # Svelte stores for state management
+    └── types.ts            # TypeScript type definitions
+```
+
+### Board Model
+
+The board uses **cube coordinates** `(q, r, s)` where `q + r + s = 0`:
+
+- 121 valid positions on the hexagonal star
+- 6 triangular corners with 10 starting positions each
+- Efficient neighbor calculation and distance metrics
+
+### AI Engine
+
+- **Algorithm**: Minimax with Alpha-Beta pruning
+- **Evaluation**: Sum of distances from each piece to target positions
+- **Search Depth**: 2-3 levels for responsive gameplay
+- **Execution**: Synchronous (Web Worker support planned)
+
+## Development
+
+### Type Checking
+
+```bash
+pnpm check
+```
+
+### Running Tests
+
+```bash
+# Run once
+pnpm test
+
+# Watch mode
+pnpm test:watch
+```
+
+### Building for Production
+
+```bash
+pnpm build
+```
+
+The built files will be in the `dist/` directory.
+
+## IDE Setup
+
+[VS Code](https://code.visualstudio.com/) with the [Svelte extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) is recommended.
+
+## License
+
+MIT
+
+## Acknowledgments
+
+- Game design inspired by the classic Chinese Checkers board game
+- Built with the amazing [Svelte](https://svelte.dev/) framework
