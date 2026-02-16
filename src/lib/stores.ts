@@ -1,8 +1,9 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import type { GameState, GameConfig, HexPos, Player, PlayerColor, CornerIndex, Move } from './types';
 import { PLAYER_COLORS } from './types';
 import { generateBoard, posKey, oppositeCorner, getCornerAssignments, placeInitialPieces } from './board';
 import { getValidMoves, checkWin } from './rules';
+import { findBestMove } from './ai';
 
 export const gameConfig = writable<GameConfig>({
   playerCount: 2,
@@ -116,3 +117,25 @@ export const selectedPiece = writable<{
   pos: null,
   validMoves: [],
 });
+
+/** Trigger AI move if the current player is an AI */
+export function triggerAIMove() {
+  const state = get(gameState);
+  if (state.phase !== 'playing') return;
+  const currentPlayer = state.players[state.currentPlayerIndex];
+  if (!currentPlayer.isAI) return;
+
+  // Find opponent (next non-AI player or first opponent)
+  const opponentIndex = (state.currentPlayerIndex + 1) % state.players.length;
+  const opponent = state.players[opponentIndex];
+
+  // Use direct call (simpler than worker for now)
+  const move = findBestMove(state.board, currentPlayer, 2, opponent);
+  if (move) {
+    setTimeout(() => {
+      gameState.makeMove(move.from, move.to);
+      // Check if next player is also AI
+      triggerAIMove();
+    }, 500); // Small delay for visual feedback
+  }
+}
